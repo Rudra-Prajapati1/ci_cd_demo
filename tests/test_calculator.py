@@ -1,6 +1,6 @@
 """Tests for the calculator module."""
 import pytest
-from src.calculator import add, subtract, multiply, divide, power
+from src.calculator import add, subtract, multiply, divide, power, modulo
 
 
 class TestAdd:
@@ -60,3 +60,11 @@ class TestPower:
 
     def test_power_fraction(self):
         assert power(4, 0.5) == 2.0
+
+
+class TestModulo:
+    def test_modulo_basic(self):
+        assert modulo(10, 3) == 1
+    
+    def test_modulo_zero(self):
+        assert modulo(10, 5) == 0
