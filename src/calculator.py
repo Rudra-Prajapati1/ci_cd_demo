@@ -21,3 +21,8 @@ def divide(a: float, b: float) -> float:
 
 def power(base: float, exp: float) -> float:
     return base ** exp
+
+def modulo(a: float, b: float) -> float:
+    if b == 0:
+        raise ValueError("Cannot perform modulo by zero")
+    return a % b
