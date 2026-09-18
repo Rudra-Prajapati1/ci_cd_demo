@@ -9,14 +9,14 @@ on:
     branches:
       - main
       - dev
-  workflow_dispatch:          # adds manual Run button on GitHub Actions tab
+  workflow_dispatch: # adds manual Run button on GitHub Actions tab
     inputs:
       reason:
         description: "Why are you triggering this manually?"
         required: false
         default: "manual check"
     schedule:
-    - cron: '25 10 * * *'      # every day at midnight UTC
+      - cron: "25 10 * * *" # every day at midnight UTC
 
 concurrency:
   group: ${{ github.ref }}
@@ -106,3 +106,5 @@ jobs:
           echo "✅ dev successfully merged into main"
           echo "Triggered by commit: ${{ github.sha }}"
           echo "Merged at: $(date -u)"
+
+#tests
