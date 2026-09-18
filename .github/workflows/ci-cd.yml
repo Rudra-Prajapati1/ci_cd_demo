@@ -16,7 +16,7 @@ on:
         required: false
         default: "manual check"
     schedule:
-    - cron: '0 0 * * *'      # every day at midnight UTC
+    - cron: '25 10 * * *'      # every day at midnight UTC
 
 concurrency:
   group: ${{ github.ref }}
