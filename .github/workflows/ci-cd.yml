@@ -71,6 +71,14 @@ jobs:
           name: coverage-report
           path: .coverage
 
+      - name: Notify on failure
+        if: failure()
+        run: |
+          echo "❌ Pipeline failed!"
+          echo "Branch      : ${{ github.ref_name }}"
+          echo "Commit      : ${{ github.sha }}"
+          echo "Triggered by: ${{ github.actor }}"
+
   # ─────────────────────────────────────────────
   # JOB 2: Auto-merge dev → main (only on push to dev)
   # ─────────────────────────────────────────────
@@ -106,5 +114,3 @@ jobs:
           echo "✅ dev successfully merged into main"
           echo "Triggered by commit: ${{ github.sha }}"
           echo "Merged at: $(date -u)"
-
-#tests
