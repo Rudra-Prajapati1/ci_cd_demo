@@ -15,6 +15,9 @@ on:
         description: "Why are you triggering this manually?"
         required: false
         default: "manual check"
+    schedule:
+    - cron: '0 0 * * *'      # every day at midnight UTC
+
 jobs:
   # ─────────────────────────────────────────────
   # JOB 1: Run the test suite
