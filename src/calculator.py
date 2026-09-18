@@ -1,5 +1,7 @@
 """Simple calculator module."""
 
+import this_does_not_exist
+
 
 def add(a: float, b: float) -> float:
     return a + b
