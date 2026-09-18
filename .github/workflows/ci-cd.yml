@@ -9,7 +9,12 @@ on:
     branches:
       - main
       - dev
-
+  workflow_dispatch:          # adds manual Run button on GitHub Actions tab
+    inputs:
+      reason:
+        description: "Why are you triggering this manually?"
+        required: false
+        default: "manual check"
 jobs:
   # ─────────────────────────────────────────────
   # JOB 1: Run the test suite
