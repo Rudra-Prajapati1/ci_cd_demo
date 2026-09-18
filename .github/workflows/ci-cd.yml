@@ -106,3 +106,5 @@ jobs:
           echo "✅ dev successfully merged into main"
           echo "Triggered by commit: ${{ github.sha }}"
           echo "Merged at: $(date -u)"
+
+#tests
