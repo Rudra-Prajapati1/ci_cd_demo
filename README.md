@@ -139,4 +139,4 @@ concurrency:
   cancel-in-progress: true
 ```
 
-If two pushes happen quickly, the old pipeline run is cancelled and only the latest one runs.# test
+If two pushes happen quickly, the old pipeline run is cancelled and only the latest one runs.
