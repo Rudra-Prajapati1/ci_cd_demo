@@ -31,6 +31,10 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       python-version: ${{ steps.set-output.outputs.python-version }}
+    defaults:
+      run:
+        shell: bash
+        working-directory: .
 
     strategy:
       matrix:
