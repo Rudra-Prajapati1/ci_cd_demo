@@ -2,13 +2,11 @@ name: CI / CD Pipeline
 
 on:
   push:
-    branches:
-      - dev
-      - "feature/**"
+    branches-ignore:
+      - main                   # tests run on all branches except main
   pull_request:
-    branches:
-      - main
-      - dev
+    branches-ignore:
+      - main                   # tests run on all PRs except to main
   workflow_dispatch:
     inputs:
       reason:
@@ -16,7 +14,7 @@ on:
         required: false
         default: "manual check"
   schedule:
-    - cron: "25 10 * * *"    # 3:55 PM IST daily
+    - cron: "25 10 * * *"      # 3:55 PM IST daily — runs on main to catch regressions
 
 concurrency:
   group: ${{ github.ref }}
@@ -29,6 +27,7 @@ env:
 jobs:
   # ─────────────────────────────────────────────
   # JOB 1 & 2: Run tests on Python 3.11 and 3.12
+  # Runs on: all branches (except main) + main on schedule
   # ─────────────────────────────────────────────
   test-311:
     name: Test Python 3.11
@@ -44,6 +43,7 @@ jobs:
 
   # ─────────────────────────────────────────────
   # JOB 3: Build and push Docker image
+  # Runs on: push to dev only, after tests pass
   # ─────────────────────────────────────────────
   docker-build-push:
     name: Build and Push Docker Image
@@ -72,7 +72,8 @@ jobs:
             ${{ secrets.DOCKERHUB_USERNAME }}/ci-cd-demo:${{ github.sha }}
 
   # ─────────────────────────────────────────────
-  # JOB 4: Deploy to staging (after image is built)
+  # JOB 4: Deploy to staging
+  # Runs on: push to dev only, after docker image is built
   # ─────────────────────────────────────────────
   deploy-staging:
     name: Deploy to Staging
@@ -90,30 +91,14 @@ jobs:
           echo "✅ Staging deploy complete"
 
   # ─────────────────────────────────────────────
-  # JOB 5: Deploy to production (requires approval)
-  # ─────────────────────────────────────────────
-  deploy-production:
-    name: Deploy to Production
-    runs-on: ubuntu-latest
-    needs: deploy-staging
-    if: github.ref == 'refs/heads/dev' && github.event_name == 'push'
-    environment: production
-    steps:
-      - name: Deploy to production
-        run: |
-          echo "🚀 Deploying to production..."
-          echo "App    : ${{ env.APP_NAME }}"
-          echo "Image  : ${{ secrets.DOCKERHUB_USERNAME }}/ci-cd-demo:${{ github.sha }}"
-          echo "Branch : ${{ github.ref_name }}"
-          echo "✅ Production deploy complete"
-
-  # ─────────────────────────────────────────────
-  # JOB 6: Auto-merge dev → main
+  # JOB 5: Auto-merge dev → main
+  # Runs ONLY after staging deploy succeeds
+  # This ensures broken docker/deploy never merges to main
   # ─────────────────────────────────────────────
   auto-merge:
     name: Auto-Merge dev → main
     runs-on: ubuntu-latest
-    needs: [test-311, test-312]
+    needs: deploy-staging        # ← waits for staging, not just tests
     if: github.ref == 'refs/heads/dev' && github.event_name == 'push'
     permissions:
       contents: write
@@ -134,3 +119,22 @@ jobs:
           git checkout main
           git merge --no-ff dev -m "chore: auto-merge dev → main after CI passed [skip ci]"
           git push origin main
+
+  # ─────────────────────────────────────────────
+  # JOB 6: Deploy to production
+  # Runs ONLY after merge to main, requires approval
+  # ─────────────────────────────────────────────
+  deploy-production:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: auto-merge            # ← only after code is in main
+    if: github.ref == 'refs/heads/dev' && github.event_name == 'push'
+    environment: production      # ← approval gate ⏸️
+    steps:
+      - name: Deploy to production
+        run: |
+          echo "🚀 Deploying to production..."
+          echo "App    : ${{ env.APP_NAME }}"
+          echo "Image  : ${{ secrets.DOCKERHUB_USERNAME }}/ci-cd-demo:${{ github.sha }}"
+          echo "Branch : ${{ github.ref_name }}"
+          echo "✅ Production deploy complete"
