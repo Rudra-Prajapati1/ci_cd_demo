@@ -22,6 +22,11 @@ concurrency:
   group: ${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  PYTHON_DEFAULT: "3.12"
+  APP_NAME: "ci-cd-demo"
+  MIN_COVERAGE: "80"
+
 jobs:
   # ─────────────────────────────────────────────
   # JOB 1: Run the test suite
@@ -35,6 +40,9 @@ jobs:
       run:
         shell: bash
         working-directory: .
+
+    env:
+      JOB_ENV: "testing"
 
     strategy:
       matrix:
