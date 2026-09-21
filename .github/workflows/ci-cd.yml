@@ -9,123 +9,48 @@ on:
     branches:
       - main
       - dev
-  workflow_dispatch: # adds manual Run button on GitHub Actions tab
+  workflow_dispatch:
     inputs:
       reason:
         description: "Why are you triggering this manually?"
         required: false
         default: "manual check"
   schedule:
-      - cron: "25 10 * * *" # every day at midnight UTC
+    - cron: "25 10 * * *"    # 3:55 PM IST daily
 
 concurrency:
   group: ${{ github.ref }}
   cancel-in-progress: true
 
 env:
-  PYTHON_DEFAULT: "3.12"
   APP_NAME: "ci-cd-demo"
   MIN_COVERAGE: "80"
 
 jobs:
-  # ─────────────────────────────────────────────
-  # JOB 1: Run the test suite
-  # ─────────────────────────────────────────────
-  test:
-    name: Run Tests (Python ${{ matrix.python-version }})
-    runs-on: ubuntu-latest
-    outputs:
-      python-version: ${{ steps.set-output.outputs.python-version }}
-    defaults:
-      run:
-        shell: bash
-        working-directory: .
+  test-311:
+    name: Test Python 3.11
+    uses: ./.github/workflows/reusable-test.yml
+    with:
+      python-version: "3.11"
 
-    env:
-      JOB_ENV: "testing"
+  test-312:
+    name: Test Python 3.12
+    uses: ./.github/workflows/reusable-test.yml
+    with:
+      python-version: "3.12"
 
-    strategy:
-      matrix:
-        python-version: ["3.11", "3.12"]
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ matrix.python-version }}
-
-      - name: Cache pip dependencies
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-
-
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-
-      - name: Run lint check
-        run: |
-          pip install flake8
-          flake8 src/ --max-line-length=100
-
-      - name: Run tests with coverage
-        run: pytest
-
-      - name: Upload coverage report
-        if: matrix.python-version == '3.12'
-        uses: actions/upload-artifact@v4
-        with:
-          name: coverage-report
-          path: .coverage
-
-      - name: Notify on failure
-        if: failure()
-        run: |
-          echo "❌ Pipeline failed!"
-          echo "Branch      : ${{ github.ref_name }}"
-          echo "Commit      : ${{ github.sha }}"
-          echo "Triggered by: ${{ github.actor }}"
-
-      - name: Set output
-        id: set-output
-        if: always()
-        run: echo "python-version=${{ matrix.python-version }}" >> $GITHUB_OUTPUT
-
-      - name: Print environment variables
-        if: always()
-        env:
-          STEP_ENV: "this is a step level variable"
-        run: |
-          echo "Workflow level - App name   : ${{ env.APP_NAME }}"
-          echo "Workflow level - Min coverage: ${{ env.MIN_COVERAGE }}"
-          echo "Job level      - Job env     : ${{ env.JOB_ENV }}"
-          echo "Step level     - Step env    : ${{ env.STEP_ENV }}"
-          echo "Default Python : ${{ env.PYTHON_DEFAULT }}"
-
-  # ─────────────────────────────────────────────
-  # JOB 2: Auto-merge dev → main (only on push to dev)
-  # ─────────────────────────────────────────────
   auto-merge:
     name: Auto-Merge dev → main
     runs-on: ubuntu-latest
-    needs: test # only runs if ALL test jobs pass
+    needs: [test-311, test-312]
     if: github.ref == 'refs/heads/dev' && github.event_name == 'push'
-
     permissions:
-      contents: write # needed to push / merge
-
+      contents: write
     steps:
-      - name: Checkout repository (full history)
+      - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0 # need full history for merge
+          fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Configure Git identity
@@ -138,94 +63,3 @@ jobs:
           git checkout main
           git merge --no-ff dev -m "chore: auto-merge dev → main after CI passed [skip ci]"
           git push origin main
-
-      - name: Post merge summary
-        run: |
-          echo "✅ dev successfully merged into main"
-          echo "Triggered by commit: ${{ github.sha }}"
-          echo "Merged at: $(date -u)"
-
-
-  report:
-    name: Print Job Summary
-    runs-on: ubuntu-latest
-    needs: test
-    if: always()
-    steps:
-      - name: Print summary
-        run: |
-          echo "✅ Tests completed"
-          echo "Python version used: ${{ needs.test.outputs.python-version }}"
-          echo "Triggered by: ${{ github.actor }}"
-          echo "Branch: ${{ github.ref_name }}"
-
-
-  run-on-pr-only:
-    name: PR Only Job
-    runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request'
-    steps:
-      - name: Print PR info
-        run: |
-          echo "PR number   : ${{ github.event.number }}"
-          echo "PR title    : ${{ github.event.pull_request.title }}"
-          echo "From branch : ${{ github.head_ref }}"
-          echo "To branch   : ${{ github.base_ref }}"
-
-  run-on-manual-only:
-    name: Manual Trigger Only Job
-    runs-on: ubuntu-latest
-    if: github.event_name == 'workflow_dispatch'
-    steps:
-      - name: Print manual trigger info
-        run: |
-          echo "Manually triggered by: ${{ github.actor }}"
-          echo "Reason: ${{ github.event.inputs.reason }}"
-
-  secrets-demo:
-    name: Secrets Demo
-    runs-on: ubuntu-latest
-    needs: test
-    if: github.event_name == 'push'
-    steps:
-      - name: Use secret safely
-        env:
-          MY_SECRET: ${{ secrets.MY_APP_SECRET }}
-        run: |
-          echo "Secret is set: ${{ secrets.MY_APP_SECRET != '' }}"
-          echo "Length of secret: ${#MY_SECRET}"
-          echo "Trying to print secret: ${{ secrets.MY_APP_SECRET }}"
-
-  github-token-demo:
-    name: GITHUB_TOKEN Demo
-    runs-on: ubuntu-latest
-    needs: test
-    if: github.event_name == 'push' && github.ref == 'refs/heads/dev'
-    permissions:
-      contents: read
-      issues: write
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Print token permissions
-        run: |
-          echo "Repo    : ${{ github.repository }}"
-          echo "Actor   : ${{ github.actor }}"
-          echo "Run ID  : ${{ github.run_id }}"
-          echo "Run URL : https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-
-      - name: Create an issue using GITHUB_TOKEN
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          gh issue create \
-            --title "CI passed on ${{ github.ref_name }}" \
-            --body "Run ${{ github.run_number }} passed by ${{ github.actor }}" \
-            --label "ci"
-
-  call-reusable:
-    name: Call Reusable Workflow
-    uses: ./.github/workflows/reusable-test.yml
-    with:
-      python-version: "3.12"
