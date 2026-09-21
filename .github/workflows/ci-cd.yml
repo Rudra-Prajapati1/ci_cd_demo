@@ -220,7 +220,6 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           gh issue create \
-            --title "CI run #${{ github.run_number }} passed ✅" \
-            --body "Pipeline passed on branch **${{ github.ref_name }}** by **${{ github.actor }}** at commit \`${{ github.sha }}\`" \
-            --label "ci"# trigger
-# trigger
+            --title "CI passed on ${{ github.ref_name }}" \
+            --body "Run ${{ github.run_number }} passed by ${{ github.actor }}" \
+            --label "ci"
