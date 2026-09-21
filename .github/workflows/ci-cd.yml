@@ -195,3 +195,28 @@ jobs:
           echo "Secret is set: ${{ secrets.MY_APP_SECRET != '' }}"
           echo "Length of secret: ${#MY_SECRET}"
           echo "Trying to print secret: ${{ secrets.MY_APP_SECRET }}"
+
+  github-token-demo:
+    name: GITHUB_TOKEN Demo
+    runs-on: ubuntu-latest
+    needs: test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/dev'
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - name: Print token permissions
+        run: |
+          echo "Repo    : ${{ github.repository }}"
+          echo "Actor   : ${{ github.actor }}"
+          echo "Run ID  : ${{ github.run_id }}"
+          echo "Run URL : https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+
+      - name: Create an issue using GITHUB_TOKEN
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh issue create \
+            --title "CI run #${{ github.run_number }} passed ✅" \
+            --body "Pipeline passed on branch **${{ github.ref_name }}** by **${{ github.actor }}** at commit \`${{ github.sha }}\`" \
+            --label "ci"
