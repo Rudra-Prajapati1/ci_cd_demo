@@ -15,7 +15,7 @@ on:
         description: "Why are you triggering this manually?"
         required: false
         default: "manual check"
-    schedule:
+  schedule:
       - cron: "25 10 * * *" # every day at midnight UTC
 
 concurrency:
@@ -29,6 +29,12 @@ jobs:
   test:
     name: Run Tests (Python ${{ matrix.python-version }})
     runs-on: ubuntu-latest
+    outputs:
+      python-version: ${{ steps.set-output.outputs.python-version }}
+    defaults:
+      run:
+        shell: bash
+        working-directory: .
 
     strategy:
       matrix:
@@ -79,6 +85,11 @@ jobs:
           echo "Commit      : ${{ github.sha }}"
           echo "Triggered by: ${{ github.actor }}"
 
+      - name: Set output
+        id: set-output
+        if: always()
+        run: echo "python-version=${{ matrix.python-version }}" >> $GITHUB_OUTPUT
+
   # ─────────────────────────────────────────────
   # JOB 2: Auto-merge dev → main (only on push to dev)
   # ─────────────────────────────────────────────
@@ -114,3 +125,17 @@ jobs:
           echo "✅ dev successfully merged into main"
           echo "Triggered by commit: ${{ github.sha }}"
           echo "Merged at: $(date -u)"
+
+
+  report:
+    name: Print Job Summary
+    runs-on: ubuntu-latest
+    needs: test
+    if: always()
+    steps:
+      - name: Print summary
+        run: |
+          echo "✅ Tests completed"
+          echo "Python version used: ${{ needs.test.outputs.python-version }}"
+          echo "Triggered by: ${{ github.actor }}"
+          echo "Branch: ${{ github.ref_name }}"
