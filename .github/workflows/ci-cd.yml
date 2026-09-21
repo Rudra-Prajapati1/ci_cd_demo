@@ -139,3 +139,26 @@ jobs:
           echo "Python version used: ${{ needs.test.outputs.python-version }}"
           echo "Triggered by: ${{ github.actor }}"
           echo "Branch: ${{ github.ref_name }}"
+
+
+  run-on-pr-only:
+    name: PR Only Job
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - name: Print PR info
+        run: |
+          echo "PR number   : ${{ github.event.number }}"
+          echo "PR title    : ${{ github.event.pull_request.title }}"
+          echo "From branch : ${{ github.head_ref }}"
+          echo "To branch   : ${{ github.base_ref }}"
+
+  run-on-manual-only:
+    name: Manual Trigger Only Job
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch'
+    steps:
+      - name: Print manual trigger info
+        run: |
+          echo "Manually triggered by: ${{ github.actor }}"
+          echo "Reason: ${{ github.event.inputs.reason }}"
