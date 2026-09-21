@@ -223,3 +223,9 @@ jobs:
             --title "CI passed on ${{ github.ref_name }}" \
             --body "Run ${{ github.run_number }} passed by ${{ github.actor }}" \
             --label "ci"
+
+  call-reusable:
+    name: Call Reusable Workflow
+    uses: ./.github/workflows/reusable-test.yml
+    with:
+      python-version: "3.12"
