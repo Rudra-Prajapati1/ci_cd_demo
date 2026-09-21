@@ -98,6 +98,17 @@ jobs:
         if: always()
         run: echo "python-version=${{ matrix.python-version }}" >> $GITHUB_OUTPUT
 
+      - name: Print environment variables
+        if: always()
+        env:
+          STEP_ENV: "this is a step level variable"
+        run: |
+          echo "Workflow level - App name   : ${{ env.APP_NAME }}"
+          echo "Workflow level - Min coverage: ${{ env.MIN_COVERAGE }}"
+          echo "Job level      - Job env     : ${{ env.JOB_ENV }}"
+          echo "Step level     - Step env    : ${{ env.STEP_ENV }}"
+          echo "Default Python : ${{ env.PYTHON_DEFAULT }}"
+
   # ─────────────────────────────────────────────
   # JOB 2: Auto-merge dev → main (only on push to dev)
   # ─────────────────────────────────────────────
