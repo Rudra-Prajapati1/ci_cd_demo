@@ -138,3 +138,35 @@ jobs:
           echo "Image  : ${{ secrets.DOCKERHUB_USERNAME }}/ci-cd-demo:${{ github.sha }}"
           echo "Branch : ${{ github.ref_name }}"
           echo "✅ Production deploy complete"
+
+  rollback-production:
+    name: Rollback Production
+    runs-on: ubuntu-latest
+    needs: deploy-production
+    if: failure() && github.ref == 'refs/heads/dev' && github.event_name == 'push'
+    environment: production
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Get last successful image tag
+        id: last-tag
+        run: |
+          LAST_TAG=$(git log --merges --format="%H" origin/main | head -1)
+          echo "tag=${LAST_TAG}" >> $GITHUB_OUTPUT
+          echo "Last successful commit: ${LAST_TAG}"
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@74a5d142397b4f367a81961eba4e8cd7edddf772  # v3.4.0
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Rollback to last successful image
+        run: |
+          echo "⏪ Rolling back production..."
+          echo "Deploying image: ${{ secrets.DOCKERHUB_USERNAME }}/ci-cd-demo:${{ steps.last-tag.outputs.tag }}"
+          echo "✅ Rollback complete"
