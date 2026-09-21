@@ -222,4 +222,4 @@ jobs:
           gh issue create \
             --title "CI run #${{ github.run_number }} passed ✅" \
             --body "Pipeline passed on branch **${{ github.ref_name }}** by **${{ github.actor }}** at commit \`${{ github.sha }}\`" \
-            --label "ci"
+            --label "ci"# trigger
