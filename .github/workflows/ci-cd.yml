@@ -134,6 +134,7 @@ jobs:
       - name: Deploy to production
         run: |
           echo "🚀 Deploying to production..."
+          exit 1
           echo "App    : ${{ env.APP_NAME }}"
           echo "Image  : ${{ secrets.DOCKERHUB_USERNAME }}/ci-cd-demo:${{ github.sha }}"
           echo "Branch : ${{ github.ref_name }}"
