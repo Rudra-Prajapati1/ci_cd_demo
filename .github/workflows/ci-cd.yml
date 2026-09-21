@@ -205,6 +205,9 @@ jobs:
       contents: read
       issues: write
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
       - name: Print token permissions
         run: |
           echo "Repo    : ${{ github.repository }}"
